@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"encoding/json"
+	//tiedot "github.com/HouzuoGuo/tiedot/db"
 )
 
 var (
@@ -52,6 +54,17 @@ func (f disabledDirListing) Readdir(count int) ([]os.FileInfo, error) {
 	return nil, nil
 }
 
+
+// seed specific types
+
+type User struct {
+	Username string
+	First string
+	Last string
+	Address string
+	Email string
+}
+
 func main() {
 	// Parse flags
 	flag.Parse()
@@ -66,6 +79,14 @@ func main() {
 		staticDir = "./"
 	}
 	staticRoutes = appendStaticRoute(staticRoutes, staticDir)
+
+
+	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+                user := &User{First: "firstname", Last: "lastname", Username: "username", Address: "address line", Email: "email@example.com"}
+                userBytes, _ := json.Marshal(user)
+                w.Write(userBytes)
+        })
+	
 
 	// Handle routes
 	http.Handle("/", http.FileServer(staticRoutes))

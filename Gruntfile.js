@@ -79,13 +79,13 @@ module.exports = function (grunt) {
       },
       livereload: {
         options: {
-          staticDirs: ['.tmp', yeomanConfig.app]
+          staticDirs: ['dist', yeomanConfig.app]
         }
       },
       test: {
         options: {
           port: 9001,
-          staticDirs: ['.tmp', 'test']
+          staticDirs: ['dist', 'test']
         }
       },
       dist: {
