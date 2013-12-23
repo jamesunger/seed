@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"encoding/json"
-	//tiedot "github.com/HouzuoGuo/tiedot/db"
+	tiedot "github.com/HouzuoGuo/tiedot/db"
 )
 
 var (
@@ -65,6 +65,29 @@ type User struct {
 	Email string
 }
 
+func openDatabase() *tiedot.DB {
+	dir := "/tmp/seed-db"
+        //os.RemoveAll(dir)
+        //defer os.RemoveAll(dir)
+
+	db, err := tiedot.OpenDB(dir)
+        if err != nil {
+                panic(err)
+        }
+
+	if err := db.Create("Users"); err != nil {
+		fmt.Println("Collection Users already created.")
+        }
+	users := db.Use("Users")
+	docID, err := users.Insert(map[string]interface{}{"First": "firstname-db", "Last": "lastname-db", "Username": "username-db", "Address": "Address line db", "Email": "email@example.com"})
+	if err != nil {
+		fmt.Println("Failed to insert dummy user.")
+	}
+	fmt.Println("docID is ", docID)
+
+	return db
+}
+
 func main() {
 	// Parse flags
 	flag.Parse()
@@ -79,6 +102,10 @@ func main() {
 		staticDir = "./"
 	}
 	staticRoutes = appendStaticRoute(staticRoutes, staticDir)
+
+
+	db := openDatabase()
+	fmt.Println(db)
 
 
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
