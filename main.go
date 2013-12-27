@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	tiedot "github.com/HouzuoGuo/tiedot/db"
+	"time"
 )
 
 var (
@@ -60,10 +61,24 @@ func (f disabledDirListing) Readdir(count int) ([]os.FileInfo, error) {
 
 type User struct {
 	Username string
-	First string
-	Last string
-	Address string
+	Name string
 	Email string
+	IsDriver bool
+	Balance string
+	Picture string
+	Age int32
+	Gender string
+	Insurer string
+	Phone string
+	CC int64
+	Address string
+	About string
+	Registered time.Time
+	Latitude float64
+	Longitude float64
+	Tags []string
+	Friends []string
+	FavoriteItemArray []string
 }
 
 func openDatabase() *tiedot.DB {
@@ -101,7 +116,7 @@ func postUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
 
        	err = json.Unmarshal(body, &usersCollection)
 	if err != nil {
-		http.Error(w,"Failed to parse JSON.",500)
+		http.Error(w,fmt.Sprintf("Failed to parse JSON: %s",err),500)
 		return
 	}
 
