@@ -1,3 +1,6 @@
 <p>This is the user view.</p>
 
-Username: {{user.Username}}
+<ul>
+	<li ng-repeat="user in users">Name: {{user.Username}} Email: {{user.Email}}</li>
+</ul>
+

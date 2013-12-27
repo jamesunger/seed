@@ -2,18 +2,10 @@
 
 angular.module('seedApp')
   .controller('UserCtrl', function ($scope, $resource) {
-	//alert($resource)
-	var Users = $resource('/user');
-	var user = Users.get(function() {
-		//alert(user);
-		//alert(user.Address);
-		//return user;
-		$scope.user = user;
-		//alert(user.Username);
+	var Users = $resource('/user', {},
+		{ 'get': { method: 'GET', isArray: true}})
+	var users = Users.get(function() {
+		$scope.users = users;
 			
 	});
-	//$scope.users = user;
-	//alert(user.Username);
-	//alert($scope.users.Username);
-	//console.log($scope.users.Username);
   });
