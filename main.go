@@ -136,8 +136,14 @@ func postUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
 func fetchUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
 	users := db.Use("Users")
 
-	//queryStr := `[{"eq": "username-db", "in": ["Username"]}]`
+	r.ParseForm()
 	queryStr := `[{"c": ["all"]}]`
+	if len(r.Form["field"]) == 1 && len(r.Form["value"]) == 1 {
+		queryStr = fmt.Sprintf(`[{"eq": "%s", "in": ["%s"]}]`,r.Form["value"][0],r.Form["field"][0])
+		fmt.Println("Searching with ", queryStr)
+	}
+
+
        	var query interface{}
 	var usersCollection []User
 
