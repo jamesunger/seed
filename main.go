@@ -8,9 +8,8 @@ import (
 	"os"
 	"encoding/json"
 	"io"
-	tiedot "github.com/HouzuoGuo/tiedot/db"
-	"time"
 	"dblayer"
+	"seed"
 )
 
 var (
@@ -58,65 +57,10 @@ func (f disabledDirListing) Readdir(count int) ([]os.FileInfo, error) {
 }
 
 
-// seed specific types
 
-type User struct {
-	Username string
-	Name string
-	Email string
-	IsDriver bool
-	Balance string
-	Picture string
-	Age int32
-	Gender string
-	Insurer string
-	Phone string
-	CC int64
-	Address string
-	About string
-	Registered time.Time
-	Latitude float64
-	Longitude float64
-	Tags []string
-	Friends []string
-	FavoriteItemArray []string
-}
+func postUsers(w http.ResponseWriter, r *http.Request, dbl seed.DbLayer) {
+	var users []seed.User
 
-type DbLayer interface {
-	OpenDB(constr string) (interface{}, error)
-	Create(col string, data []interface{}) ([]uint64, error)
-	CreateCol(col string) (error)
-	Update(col string, docid uint64, data string) error
-	Delete(col string, docid uint64) error
-	Query(col, querystr string) ([]byte, error)
-	Get(col string, docid uint64 ) (interface{}, error)
-}
-
-func openDatabase() *tiedot.DB {
-	dir := "/tmp/seed-db"
-        //os.RemoveAll(dir)
-        //defer os.RemoveAll(dir)
-
-	db, err := tiedot.OpenDB(dir)
-        if err != nil {
-                panic(err)
-        }
-
-	if err := db.Create("Users"); err != nil {
-		fmt.Println("Collection Users already created.")
-        }
-	//users := db.Use("Users")
-	//docID, err := users.Insert(map[string]interface{}{"First": "firstname-db", "Last": "lastname-db", "Username": "username-db", "Address": "Address line db", "Email": "email@example.com"})
-	//if err != nil {
-	//	fmt.Println("Failed to insert dummy user.")
-	//}
-	//fmt.Println("docID is ", docID)
-
-	return db
-}
-
-func postUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
-	var usersCollection []User
 	body := make([]byte,r.ContentLength)
 	_, err := io.ReadFull(r.Body,body)
         if err != nil {
@@ -125,26 +69,23 @@ func postUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
         }
 	
 
-       	err = json.Unmarshal(body, &usersCollection)
+       	err = json.Unmarshal(body, &users)
 	if err != nil {
 		http.Error(w,fmt.Sprintf("Failed to parse JSON: %s",err),500)
 		return
 	}
 
-	users := db.Use("Users")
-	for i := range usersCollection {
-		docID, err := users.Insert(usersCollection[i])
-		if err != nil {
-	       		fmt.Println("Failed to insert user: ", usersCollection[i])
-		}
-		fmt.Println("Added user ", docID)
-		
+
+	_,err = dbl.CreateUsers(users)
+	if err != nil {
+                http.Error(w,fmt.Sprintf("Error creating users: ",err),500)
+                return
 	}
 
 	return
 }
 
-func fetchUsers(w http.ResponseWriter, r *http.Request, dbl DbLayer) {
+func fetchUsers(w http.ResponseWriter, r *http.Request, dbl seed.DbLayer) {
 
 	r.ParseForm()
 	queryStr := `[{"c": ["all"]}]`
@@ -164,7 +105,7 @@ func fetchUsers(w http.ResponseWriter, r *http.Request, dbl DbLayer) {
 
 	// we don't need to do this at all since the dblayer did it for us but
 	// useful for debugging right now
-	var usersCollection []User
+	var usersCollection []seed.User
 	json.Unmarshal(queryResult,&usersCollection)
 	fmt.Println(queryResult)
 	for id := range usersCollection {
@@ -190,7 +131,7 @@ func main() {
 	staticRoutes = appendStaticRoute(staticRoutes, staticDir)
 
 
-	db := openDatabase() 
+	db := seed.OpenDatabase() 
 	dbl := &dblayer.DBTiedot{Db: db}
 
 
@@ -199,7 +140,7 @@ func main() {
 		if r.Method == "GET" {
 			fetchUsers(w,r,dbl)
 		} else {
-			postUsers(w,r,db)
+			postUsers(w,r,dbl)
 		}
 
         })

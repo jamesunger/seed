@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"encoding/json"
+	"seed"
 	tiedot "github.com/HouzuoGuo/tiedot/db"
 )
 
@@ -40,17 +41,17 @@ func (tdb *DBTiedot) CreateCol(col string) error {
 	return nil
 }
 
-func (tdb *DBTiedot) Create(col string, data []interface{}) ([]uint64,error) {
+func (tdb *DBTiedot) CreateUsers(users []seed.User) ([]uint64,error) {
 
 	var docIDs []uint64
 
-	cols := tdb.Db.Use(col)
-	for i := range data {
-		docID, err := cols.Insert(data[i])
+	cols := tdb.Db.Use("Users")
+	for i := range users {
+		docID, err := cols.Insert(users[i])
 		if err != nil {
-	       		fmt.Println("Failed to insert user: ", data[i])
+	       		fmt.Println("Failed to insert user: ", users[i])
 		}
-		fmt.Println("Added record to ", col, ": ", docID)
+		fmt.Println("Added record to Users: ", docID)
 		docIDs = append(docIDs,docID)
 	}
 
@@ -81,13 +82,14 @@ func (tdb *DBTiedot) Query(col, querystr string) ([]byte, error) {
 		data = append(data,intf)
 	}
 
-	dataBytes,err := json.Marshal(data)
-	if err != nil {
-		fmt.Println("Failed to marshal interface{} to raw []bytes: ", err)
-		return nil,err
-	}
+       dataBytes,err := json.Marshal(data)
+       if err != nil {
+               fmt.Println("Failed to marshal interface{} to raw []bytes: ", err)
+               return nil,err
+       }
 
-	return dataBytes,nil
+       return dataBytes,nil
+
 
 }
 
