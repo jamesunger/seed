@@ -12,6 +12,22 @@ type DBTiedot struct {
 	Db *tiedot.DB
 }
 
+func (tdb *DBTiedot) OpenDatabase() {
+	dir := "/tmp/seed-db"
+
+	db, err := tiedot.OpenDB(dir)
+        if err != nil {
+                panic(err)
+        }
+
+	if err := db.Create("Users"); err != nil {
+		fmt.Println("Collection Users already created.")
+        }
+
+	tdb.Db = db
+}
+
+
 
 func (tdb *DBTiedot) OpenDB(constr string) (interface{}, error) {
 	dir := "/tmp/seed-db"

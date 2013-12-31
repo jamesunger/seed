@@ -131,8 +131,8 @@ func main() {
 	staticRoutes = appendStaticRoute(staticRoutes, staticDir)
 
 
-	db := seed.OpenDatabase() 
-	dbl := &dblayer.DBTiedot{Db: db}
+	dbl := &dblayer.DBTiedot{}
+	dbl.OpenDatabase()
 
 
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
