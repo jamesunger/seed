@@ -1,8 +1,6 @@
 package seed
 
 import (
-	"fmt"
-	tiedot "github.com/HouzuoGuo/tiedot/db"
 	"time"
 )
 
@@ -37,20 +35,5 @@ type DbLayer interface {
 	Delete(col string, docid uint64) error
 	Query(col, querystr string) ([]byte, error)
 	Get(col string, docid uint64 ) (interface{}, error)
-}
-
-func OpenDatabase() *tiedot.DB {
-	dir := "/tmp/seed-db"
-
-	db, err := tiedot.OpenDB(dir)
-        if err != nil {
-                panic(err)
-        }
-
-	if err := db.Create("Users"); err != nil {
-		fmt.Println("Collection Users already created.")
-        }
-
-	return db
 }
 
