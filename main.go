@@ -155,7 +155,7 @@ func fetchUsers(w http.ResponseWriter, r *http.Request, dbl DbLayer) {
 
 
 
-	queryResult,err := dbl.Query("Users","")
+	queryResult,err := dbl.Query("Users",queryStr)
 	if err != nil {
 		fmt.Println("Failed to query ", err)
 		return

@@ -60,10 +60,6 @@ func (tdb *DBTiedot) Create(col string, data []interface{}) ([]uint64,error) {
 
 func (tdb *DBTiedot) Query(col, querystr string) ([]byte, error) {
 
-	if querystr == "" {
-		querystr = `[{"c": ["all"]}]`
-	}
-
 	var query interface{}
 	var data []interface{}
 	
