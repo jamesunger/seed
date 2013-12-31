@@ -10,6 +10,7 @@ import (
 	"io"
 	tiedot "github.com/HouzuoGuo/tiedot/db"
 	"time"
+	"dblayer"
 )
 
 var (
@@ -81,6 +82,16 @@ type User struct {
 	FavoriteItemArray []string
 }
 
+type DbLayer interface {
+	OpenDB(constr string) (interface{}, error)
+	Create(col string, data []interface{}) ([]uint64, error)
+	CreateCol(col string) (error)
+	Update(col string, docid uint64, data string) error
+	Delete(col string, docid uint64) error
+	Query(col, querystr string) ([]byte, error)
+	Get(col string, docid uint64 ) (interface{}, error)
+}
+
 func openDatabase() *tiedot.DB {
 	dir := "/tmp/seed-db"
         //os.RemoveAll(dir)
@@ -133,8 +144,7 @@ func postUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
 	return
 }
 
-func fetchUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
-	users := db.Use("Users")
+func fetchUsers(w http.ResponseWriter, r *http.Request, dbl DbLayer) {
 
 	r.ParseForm()
 	queryStr := `[{"c": ["all"]}]`
@@ -144,32 +154,24 @@ func fetchUsers(w http.ResponseWriter, r *http.Request, db *tiedot.DB) {
 	}
 
 
-       	var query interface{}
-	var usersCollection []User
 
-       	json.Unmarshal([]byte(queryStr), &query)
-	queryResult := make(map[uint64]struct{})
-
-	if err := tiedot.EvalQueryV2(query, users, &queryResult); err != nil {
-               	panic(err)
-       	}
-
-
-	fmt.Println(queryResult)
-	for id := range queryResult {
-		user := &User{};
-		users.Read(id,&user)
-               	fmt.Printf("data %s\n", user.Username)
-		usersCollection = append(usersCollection,*user)
-       	}
-
-
-	
-        usersBytes, err := json.Marshal(usersCollection)
+	queryResult,err := dbl.Query("Users","")
 	if err != nil {
-		fmt.Println("Error marshaling json ", err)
+		fmt.Println("Failed to query ", err)
+		return
 	}
-        w.Write(usersBytes)
+
+
+	// we don't need to do this at all since the dblayer did it for us but
+	// useful for debugging right now
+	var usersCollection []User
+	json.Unmarshal(queryResult,&usersCollection)
+	fmt.Println(queryResult)
+	for id := range usersCollection {
+		fmt.Println("Username is ", usersCollection[id].Username)
+       	}
+
+	w.Write(queryResult)
 }
 
 func main() {
@@ -189,13 +191,13 @@ func main() {
 
 
 	db := openDatabase() 
-	fmt.Println(db)
+	dbl := &dblayer.DBTiedot{Db: db}
 
 
 	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Method == "GET" {
-			fetchUsers(w,r,db)
+			fetchUsers(w,r,dbl)
 		} else {
 			postUsers(w,r,db)
 		}
