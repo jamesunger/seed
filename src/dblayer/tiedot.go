@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"encoding/json"
 	"seed"
+	"reflect"
+	"strings"
 	tiedot "github.com/HouzuoGuo/tiedot/db"
 )
 
@@ -20,7 +22,7 @@ func (tdb *DBTiedot) OpenDatabase() {
                 panic(err)
         }
 
-	if err := db.Create("Users"); err != nil {
+	if err := db.Create("Users",50); err != nil {
 		fmt.Println("Collection Users already created.")
         }
 
@@ -49,7 +51,7 @@ func (tdb *DBTiedot) OpenDB(constr string) (interface{}, error) {
 func (tdb *DBTiedot) CreateCol(col string) error {
 
 
-	if err := tdb.Db.Create(col); err != nil {
+	if err := tdb.Db.Create(col,50); err != nil {
 		fmt.Println("Collection ", col, " already created.")
 		return err
         }
@@ -63,7 +65,9 @@ func (tdb *DBTiedot) CreateUsers(users []seed.User) ([]uint64,error) {
 
 	cols := tdb.Db.Use("Users")
 	for i := range users {
-		docID, err := cols.Insert(users[i])
+		m := make(map[string]interface{})
+		m[users[i].Username] = users[i]
+		docID, err := cols.Insert(m)
 		if err != nil {
 	       		fmt.Println("Failed to insert user: ", users[i])
 		}
@@ -85,17 +89,33 @@ func (tdb *DBTiedot) Query(col, querystr string) ([]byte, error) {
 
 	colh := tdb.Db.Use(col)
 
-	if err := tiedot.EvalQueryV2(query, colh, &queryResult); err != nil {
+	if err := tiedot.EvalQuery(query, colh, &queryResult); err != nil {
 		return nil,err
        	}
 
 	for id := range queryResult {
 		var intf interface{}
-		err := colh.Read(id,&intf)
+		var subintf interface{}
+		_,err := colh.Read(id,&intf)
 		if err != nil {
 			fmt.Println("Read back failed ", err)
 		}
-		data = append(data,intf)
+
+
+		//FIXME: wtf do we have to do this?
+		//fmt.Println("Value of: %s\n",reflect.ValueOf(intf))
+		val := reflect.ValueOf(intf)
+		keys := val.MapKeys()
+		for k := range keys {
+			if strings.Contains(keys[k].String(),"id") {
+				continue;
+			}
+			fmt.Println("We want uuid: ", keys[k].String())
+			subintf = val.MapIndex(keys[k]).Interface()
+			data = append(data,subintf)
+		}
+		//subintf = val.Elem(;
+
 	}
 
        dataBytes,err := json.Marshal(data)
